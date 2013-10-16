@@ -4,9 +4,14 @@ module Baconmail
     def self.process_inbox!(account)
       log = Logger.new(STDOUT)
       log.info("Account: #{account.username}")
+
       Gmail.new(account.username, account.password) do |gmail|
         gmail.inbox.emails(:unread).each do |email|
-          mailbox = email[:to].detect{|mail| mail.host == account.username.split("@").last}.mailbox.downcase rescue "unknown"
+          username = account.username
+          unless account.optional_account.nil?
+            username = account.optional_account
+          end
+          mailbox = email[:to].detect{|mail| mail.host == username.split("@").last}.mailbox.downcase rescue "unknown"
           gmail.labels.new(mailbox)
           if gmail.mailbox(mailbox).count == 0
             log.info("First email for [#{gmail.mailbox(mailbox)}], forwarding..")
